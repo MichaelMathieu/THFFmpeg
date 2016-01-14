@@ -26,4 +26,4 @@ luarocks make
 After that, as long as you don't remove the `build` folder, it should compile fine with the future `luarocks make` calls.
 
 The only way I found to set the correct paths were to add `-I/usr/include/ffmpeg` to the CXX and C flags, in `ccmake .`.
-This should work on NYU servers, but other paths may be necessary dependinf on where you installed `ffmpeg`.
+This should work on NYU servers, but other paths may be necessary depending on where you installed `ffmpeg`.
