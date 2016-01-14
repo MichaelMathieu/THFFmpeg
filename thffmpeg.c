@@ -46,6 +46,10 @@ void AV_init() {
   }
     
   av_register_all();
+
+#ifndef THFFMPEG_VERBOSE
+  av_log_set_level(AV_LOG_QUIET);
+#endif
 }
 
 void AV_close(AV_Struct* avs) {
