@@ -27,3 +27,28 @@ After that, as long as you don't remove the `build` folder, it should compile fi
 
 The only way I found to set the correct paths were to add `-I/usr/include/ffmpeg` to the CXX and C flags, in `ccmake .`.
 This should work on NYU servers, but other paths may be necessary depending on where you installed `ffmpeg`.
+
+### Testing
+
+To test the install, you can run
+```
+th test/test.th
+```
+
+## Usage
+
+In torch:
+```
+require 'thffmpeg'
+
+decoder = THFFmpeg() --creates a decoder object
+decoder:open('myvideo.avi') --opens the video myvideo.avi
+frame1 = decoder:next_frame() --allocates a new tensor and puts the first frame in it
+frame2 = torch.Tensor(42,42)
+decoder:next_frame(frame2) --resizes frame2 if necessary and puts the second frame in it
+decoder:close() --closes the video
+decoder:open('myvideo2.avi') --opens the video myvideo2.avi
+```
+
+Note that closing the video is not strictly necessary, are the decoder will automatically close
+it when another video is opened, or when it is garbage collected.
