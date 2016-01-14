@@ -50,5 +50,9 @@ decoder:close() --closes the video
 decoder:open('myvideo2.avi') --opens the video myvideo2.avi
 ```
 
+`next_frame` returns nil when there is no more frames to read. Unfortunately, there
+is no way to know the number of frames beforehand, apparently the best we can do
+is an estimate (due to limitations of the video codecs).
+
 Note that closing the video is not strictly necessary, as the decoder will automatically close
 it when another video is opened, or when the decoder is garbage collected.
