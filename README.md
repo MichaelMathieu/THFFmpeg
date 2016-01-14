@@ -50,5 +50,5 @@ decoder:close() --closes the video
 decoder:open('myvideo2.avi') --opens the video myvideo2.avi
 ```
 
-Note that closing the video is not strictly necessary, are the decoder will automatically close
-it when another video is opened, or when it is garbage collected.
+Note that closing the video is not strictly necessary, as the decoder will automatically close
+it when another video is opened, or when the decoder is garbage collected.
