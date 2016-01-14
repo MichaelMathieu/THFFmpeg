@@ -1,0 +1,16 @@
+CMAKE_MINIMUM_REQUIRED(VERSION 2.6 FATAL_ERROR)
+CMAKE_POLICY(VERSION 2.6)
+
+SET(CMAKE_MODULE_PATH
+  "${CMAKE_CURRENT_SOURCE_DIR}/cmake"
+  "${CMAKE_MODULE_PATH}")
+
+FIND_PACKAGE(Torch REQUIRED)
+FIND_PACKAGE(FFMPEG REQUIRED)
+
+SET(src thffmpeg.c)
+SET(luasrc init.lua test/test.lua)
+
+ADD_TORCH_PACKAGE(thffmpeg "${src}" "${luasrc}" "Video reader")
+TARGET_LINK_LIBRARIES(thffmpeg luaT TH avformat swscale)
+INSTALL(FILES "README.md" DESTINATION "${Torch_INSTALL_LUA_PATH_SUBDIR}/thffmpeg")
