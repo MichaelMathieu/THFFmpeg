@@ -67,6 +67,7 @@ void AV_close(AV_Struct* avs) {
 }
 
 int AV_open(AV_Struct* avs, const char* filename) {
+  AV_close(avs);
   // Open video file
   if (avformat_open_input(&(avs->pFormatCtx), filename, NULL, NULL) != 0)
     return 0;
