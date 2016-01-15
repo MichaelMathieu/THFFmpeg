@@ -143,8 +143,37 @@ AVFrame* AV_read_frame(AV_Struct* avs) {
 	return avs->pFrameRGB;
       }
     }
+    av_free_packet(&avs->packet);
   }
   return NULL;
+}
+
+int AV_skip_frame(AV_Struct* avs) {
+  int frameFinished;
+  while (av_read_frame(avs->pFormatCtx, &(avs->packet)) >= 0) {
+    // Is this a packet from the video stream?
+    if(avs->packet.stream_index == avs->videoStream) {
+      avcodec_decode_video2(avs->pCodecCtx, avs->pFrame, &frameFinished,  &avs->packet);
+      if (frameFinished) {
+	av_free_packet(&avs->packet);
+	return 1;
+      }
+    }
+  }
+  return 0;
+}
+
+int AV_seek(AV_Struct* avs, int64_t frame_idx) {
+  //TODO this is probably suboptimal, but apparently that's the only precise way:
+  // we seek to start and then skip frame_idx frames
+  if (av_seek_frame(avs->pFormatCtx, avs->videoStream, 0, AVSEEK_FLAG_BACKWARD) < 0)
+    return 0;
+  avcodec_flush_buffers(avs->pCodecCtx);
+  int i;
+  for (i = 0; i < frame_idx; ++i)
+    if (!AV_skip_frame(avs))
+      return 0;
+  return 1;
 }
 
 int AV_Struct_gc(lua_State* L) {
@@ -185,10 +214,33 @@ int thffmpeg_Main_avclose(lua_State* L) {
   return 0;
 }
 
+int thffmpeg_Main_avseek(lua_State* L) {
+  AV_Struct* avs = (AV_Struct*)lua_touserdata(L, 1);
+  int64_t frame_idx = lua_tointeger(L, 2);
+  int result = AV_seek(avs, frame_idx);
+  lua_pushboolean(L, result);
+  return 1;
+}
+
+int thffmpeg_Main_length(lua_State* L) {
+  AV_Struct* avs = (AV_Struct*)lua_touserdata(L, 1);
+  uint64_t pos = avs->pFormatCtx->pb->pos;
+  AV_seek(avs, 0);
+  int64_t nframes = 0;
+  while(AV_skip_frame(avs))
+    ++nframes;
+  avformat_seek_file(avs->pFormatCtx, avs->videoStream, pos, pos, pos, AVSEEK_FLAG_BYTE);
+  avcodec_flush_buffers(avs->pCodecCtx);
+  lua_pushinteger(L, nframes);
+  return 1;
+}
+
 static const struct luaL_Reg thffmpeg_Main__ [] = {
   {"init", thffmpeg_Main_avinit},
   {"open", thffmpeg_Main_avopen},
   {"close", thffmpeg_Main_avclose},
+  {"seek", thffmpeg_Main_avseek},
+  {"length", thffmpeg_Main_length},
   {NULL, NULL}
 };
 

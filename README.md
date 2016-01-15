@@ -50,9 +50,32 @@ decoder:close() --closes the video
 decoder:open('myvideo2.avi') --opens the video myvideo2.avi
 ```
 
-`next_frame` returns nil when there is no more frames to read. Unfortunately, there
-is no way to know the number of frames beforehand, apparently the best we can do
-is an estimate (due to limitations of the video codecs).
+### THFFmpeg:open(filename)
 
-Note that closing the video is not strictly necessary, as the decoder will automatically close
-it when another video is opened, or when the decoder is garbage collected.
+Opens a video file. If another was opened in the same THFFmpeg object, it is closed.
+It sets the variables `h` and `w` of the THFFmpeg object to the size of the video stream.
+
+### THFFmpeg:close()
+
+Closes a video file. It is not usually strictly necessary, as the decoder will
+automatically close the opened video when another video is opened,
+or when the decoder is garbage collected.
+
+### [res] THFFmpeg:next_frame([dst])
+
+Decodes and returns the next frame. If `dst` is provided, it is used as a destination buffer,
+and must have the correct size.
+This function returns nil when there is no more frames to read.
+
+### [res] THFFmpeg:seek(idx)
+
+Seeks the `idx`-th frame. Because of limitations of video format, this function decodes
+very frame from the beginning, so it might be slow on large videos. However, it will
+always be faster than calling `idx` times the function `next_frame` because the
+images are not processed.
+This function returns `true` if the seek was a success, and `false` otherwise.
+
+### [res] THFFmpeg:length()
+
+Returns the length of the video. As for `seek`, this function decodes all frames of the
+video and therefore might be slow on large videos.
