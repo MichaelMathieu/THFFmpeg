@@ -27,6 +27,25 @@ typedef struct {
   int               h, w;
 } AV_Struct;
 
+static int lockmgr(void **mtx, enum AVLockOp op) {
+  switch(op) {
+  case AV_LOCK_CREATE:
+    *mtx = malloc(sizeof(pthread_mutex_t));
+    if(!*mtx)
+      return 1;
+    return !!pthread_mutex_init(*mtx, NULL);
+  case AV_LOCK_OBTAIN:
+    return !!pthread_mutex_lock(*mtx);
+  case AV_LOCK_RELEASE:
+    return !!pthread_mutex_unlock(*mtx);
+  case AV_LOCK_DESTROY:
+    pthread_mutex_destroy(*mtx);
+    free(*mtx);
+    return 0;
+  }
+  return 1;
+}
+
 void AV_init() {
   // Register all formats and codecs
   if (LIBAVFORMAT_VERSION_INT != avformat_version()) {
@@ -44,7 +63,12 @@ void AV_init() {
 	   LIBSWSCALE_VERSION_INT, swscale_version());
     exit(0);
   }
-    
+  
+  if (av_lockmgr_register(lockmgr)) {
+    fprintf(stderr, "Cannot register lockmgr\n");
+    exit(0);
+  }
+			  
   av_register_all();
 
 #ifndef THFFMPEG_VERBOSE
@@ -179,6 +203,7 @@ int AV_seek(AV_Struct* avs, int64_t frame_idx) {
 int AV_Struct_gc(lua_State* L) {
   AV_Struct* avs = (AV_Struct*)lua_touserdata(L, 1);
   AV_close(avs);
+  av_lockmgr_register(NULL);
   return 0;
 }
 
