@@ -29,8 +29,12 @@ function THFFmpeg:next_frame(buffer)
       error("THFFmpeg: next_frame called without opening a video")
    end
    buffer = buffer or torch.Tensor(3, self.h, self.w)
-   assert((buffer:dim() == 3) and (buffer:size(1) == 3)
-	     and (buffer:size(2) == self.h) and (buffer:size(3) == self.w))
+   if (buffer:dim() ~= 3) or (buffer:size(1) ~= 3)
+      or (buffer:size(2) ~= self.h) or (buffer:size(3) ~= self.w) then
+	 print("THFFmpeg: wrong buffer size: {buffer, self}")
+	 print{buffer, {3, self.h, self.w}}
+	 return nil
+   end
    if buffer.libthffmpeg.readframe(self.avs, buffer) then
       return buffer
    else

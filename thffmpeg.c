@@ -77,6 +77,9 @@ void AV_init() {
 }
 
 void AV_close(AV_Struct* avs) {
+  //TODO: pretty sure most of them don't need reallocation for new video
+  if (avs->sws_ctx != NULL)
+    sws_freeContext(avs->sws_ctx);
   if (avs->buffer != NULL)
     av_free(avs->buffer);
   if (avs->pFrameRGB != NULL)
@@ -125,15 +128,15 @@ int AV_open(AV_Struct* avs, const char* filename) {
   if (avcodec_open2(avs->pCodecCtx, avs->pCodec, &(avs->optionsDict)) < 0)
     return 0;
   // Allocate video frame
-  avs->pFrame = av_frame_alloc();
+  avs->pFrame = av_frame_alloc(); //TODO: maybe can be allocated only once?
   // Allocate an AVFrame structure
-  avs->pFrameRGB = av_frame_alloc();
+  avs->pFrameRGB = av_frame_alloc(); //TODO: maybe can be allocated only once?
   if(avs->pFrameRGB == NULL)
     return 0;
   // Determine required buffer size and allocate buffer
   int numBytes = avpicture_get_size(PIX_FMT_RGB24, avs->pCodecCtx->width,
 				    avs->pCodecCtx->height);
-  avs->buffer = (uint8_t*)av_malloc(numBytes*sizeof(uint8_t));
+  avs->buffer = (uint8_t*)av_malloc(numBytes*sizeof(uint8_t)); //TODO: can be reallocated only when needed
   // fill sws_ctx
   avs->sws_ctx =
     sws_getContext(avs->pCodecCtx->width, avs->pCodecCtx->height, avs->pCodecCtx->pix_fmt,
