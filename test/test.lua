@@ -10,13 +10,18 @@ collectgarbage()
 
 if not y:open('/scratch/datasets/ucf101/UCF-101/ApplyEyeMakeup/v_ApplyEyeMakeup_g01_c01.avi') then
    print("Failed to open video")
-   sys.exit(0)
+   os.exit(0)
 end
 
 local fmeans = {87.119574652778, 87.233272569444, 86.159526909722}
 print(fmeans)
 
+require 'image'
+
 frame1 = y:next_frame()
+image.display(frame1)
+os.execute('sleep 10')
+
 if math.abs(frame1:mean() - fmeans[1]) > 1e-4 then
    print("Frame 1 doesn't seem to be correct")
    sys.exit(0)

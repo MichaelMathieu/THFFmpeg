@@ -13,7 +13,7 @@ end
 
 function THFFmpeg:open(filename)
    if not paths.filep(filename) then
-      print("THFFmpeg: file " .. filename .. "does not exist")
+      print("THFFmpeg: file " .. filename .. " does not exist")
       return false
    end
    self.h, self.w = libthffmpeg.open(self.avs, filename)

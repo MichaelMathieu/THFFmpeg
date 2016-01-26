@@ -25,6 +25,7 @@ typedef struct {
   int               videoStream;
   struct SwsContext *sws_ctx;
   int               h, w;
+  int               bufferSize;
 } AV_Struct;
 
 static int lockmgr(void **mtx, enum AVLockOp op) {
@@ -77,20 +78,23 @@ void AV_init() {
 }
 
 void AV_close(AV_Struct* avs) {
-  //TODO: pretty sure most of them don't need reallocation for new video
+  uint8_t* buffer = avs->buffer;
   if (avs->sws_ctx != NULL)
     sws_freeContext(avs->sws_ctx);
-  if (avs->buffer != NULL)
-    av_free(avs->buffer);
-  if (avs->pFrameRGB != NULL)
-    av_free(avs->pFrameRGB);
-  if (avs->pFrame != NULL)
-    av_free(avs->pFrame);
   if (avs->pCodecCtx != NULL)
     avcodec_close(avs->pCodecCtx);
   if (avs->pFormatCtx != NULL)
     avformat_close_input(&(avs->pFormatCtx));
+  if (avs->pFrame != NULL) {
+    av_frame_free(&avs->pFrame); //TODO: could be deallocated only once in a while (for mem leak)
+    av_free(avs->pFrame);
+  }
+  if (avs->pFrameRGB != NULL) {
+    av_frame_free(&avs->pFrameRGB); //TODO same
+    av_free(avs->pFrameRGB);
+  }
   memset(avs, 0, sizeof(AV_Struct));
+  avs->buffer = buffer;
 }
 
 int AV_open(AV_Struct* avs, const char* filename) {
@@ -128,15 +132,24 @@ int AV_open(AV_Struct* avs, const char* filename) {
   if (avcodec_open2(avs->pCodecCtx, avs->pCodec, &(avs->optionsDict)) < 0)
     return 0;
   // Allocate video frame
-  avs->pFrame = av_frame_alloc(); //TODO: maybe can be allocated only once?
+  avs->pFrame = av_frame_alloc();
+  if (avs->pFrame == NULL)
+    return 0;
   // Allocate an AVFrame structure
-  avs->pFrameRGB = av_frame_alloc(); //TODO: maybe can be allocated only once?
-  if(avs->pFrameRGB == NULL)
+  avs->pFrameRGB = av_frame_alloc();
+  if (avs->pFrameRGB == NULL)
     return 0;
   // Determine required buffer size and allocate buffer
   int numBytes = avpicture_get_size(PIX_FMT_RGB24, avs->pCodecCtx->width,
 				    avs->pCodecCtx->height);
-  avs->buffer = (uint8_t*)av_malloc(numBytes*sizeof(uint8_t)); //TODO: can be reallocated only when needed
+  if ((avs->buffer == NULL) || (avs->bufferSize < numBytes)) {
+    if (avs->buffer != NULL) {
+      av_free(avs->buffer);
+      avs->buffer = NULL;
+    }
+    avs->buffer = (uint8_t*)av_malloc(numBytes*sizeof(uint8_t));
+    avs->bufferSize = numBytes;
+  }
   // fill sws_ctx
   avs->sws_ctx =
     sws_getContext(avs->pCodecCtx->width, avs->pCodecCtx->height, avs->pCodecCtx->pix_fmt,
@@ -162,14 +175,16 @@ AVFrame* AV_read_frame(AV_Struct* avs) {
       // Did we get a video frame?
       if(frameFinished) {
 	// Convert the image from its native format to RGB
-        sws_scale(avs->sws_ctx, (uint8_t const * const *)avs->pFrame->data,
+	sws_scale(avs->sws_ctx, (uint8_t const * const *)avs->pFrame->data,
 		  avs->pFrame->linesize, 0, avs->pCodecCtx->height,
 		  avs->pFrameRGB->data, avs->pFrameRGB->linesize);
+	//av_frame_unref(avs->pFrame); //TODO: this is opnly in ffmpeg 2.8.5
 	// Free the packet that was allocated by av_read_frame
 	av_free_packet(&avs->packet);
 	return avs->pFrameRGB;
       }
     }
+    //av_frame_unref(avs->pFrame); //TODO: this is opnly in ffmpeg 2.8.5
     av_free_packet(&avs->packet);
   }
   return NULL;
@@ -205,6 +220,8 @@ int AV_seek(AV_Struct* avs, int64_t frame_idx) {
 
 int AV_Struct_gc(lua_State* L) {
   AV_Struct* avs = (AV_Struct*)lua_touserdata(L, 1);
+  if (avs->buffer != NULL)
+    av_free(avs->buffer);
   AV_close(avs);
   av_lockmgr_register(NULL);
   return 0;

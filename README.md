@@ -5,6 +5,8 @@ Big thanks to https://github.com/mpenkov/ffmpeg-tutorial for their tutorials.
 
 ## Install
 
+It requires ffmpeg 2.x (tested with 2.8.5) for now.
+
 Clone this git, then type
 ```
 luarocks make
