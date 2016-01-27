@@ -201,6 +201,7 @@ int AV_skip_frame(AV_Struct* avs) {
 	return 1;
       }
     }
+    av_free_packet(&avs->packet);
   }
   return 0;
 }
