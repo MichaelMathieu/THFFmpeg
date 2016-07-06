@@ -268,6 +268,13 @@ int thffmpeg_Main_avseek(lua_State* L) {
   return 1;
 }
 
+int thffmpeg_Main_avskipframe(lua_State* L) {
+  AV_Struct* avs = (AV_Struct*)lua_touserdata(L, 1);
+  int result = AV_skip_frame(avs);
+  lua_pushboolean(L, result);
+  return 1;
+}
+
 int thffmpeg_Main_length(lua_State* L) {
   AV_Struct* avs = (AV_Struct*)lua_touserdata(L, 1);
   uint64_t pos = avs->pFormatCtx->pb->pos;
@@ -286,6 +293,7 @@ static const struct luaL_Reg thffmpeg_Main__ [] = {
   {"open", thffmpeg_Main_avopen},
   {"close", thffmpeg_Main_avclose},
   {"seek", thffmpeg_Main_avseek},
+  {"skipframe", thffmpeg_Main_avskipframe},
   {"length", thffmpeg_Main_length},
   {NULL, NULL}
 };

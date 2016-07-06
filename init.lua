@@ -42,6 +42,10 @@ function THFFmpeg:next_frame(buffer)
    end
 end
 
+function THFFmpeg:skip_frame()
+   return libthffmpeg.skipframe(self.avs)
+end
+
 function THFFmpeg:seek(idx)
    return libthffmpeg.seek(self.avs, idx)
 end

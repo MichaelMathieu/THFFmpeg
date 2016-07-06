@@ -69,10 +69,15 @@ Decodes and returns the next frame. If `dst` is provided, it is used as a destin
 and must have the correct size.
 This function returns nil when there is no more frames to read.
 
+### [res] THFFmpeg:skip_frame()
+
+Skips a frame. Returns true if successful and false otherwise. Because the frame is not processed, it
+is faster than next_frame.
+
 ### [res] THFFmpeg:seek(idx)
 
 Seeks the `idx`-th frame. Because of limitations of video format, this function decodes
-very frame from the beginning, so it might be slow on large videos. However, it will
+every frame from the beginning, so it might be slow on large videos. However, it will
 always be faster than calling `idx` times the function `next_frame` because the
 images are not processed.
 This function returns `true` if the seek was a success, and `false` otherwise.
