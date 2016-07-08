@@ -3,6 +3,8 @@
 Some (quick and not so dirty) bindings of ffmpeg for torch.
 Big thanks to https://github.com/mpenkov/ffmpeg-tutorial for their tutorials.
 
+Under BSD License.
+
 ## Install
 
 It requires ffmpeg 2.x (tested with 2.8.5) for now.
