@@ -7,6 +7,7 @@ int thffmpeg_(Main_avreadframe)(lua_State* L) {
   THTensor* t = luaT_checkudata(L, 2, torch_Tensor);
   luaL_argcheck(L, avs->pFrameRGB != NULL, 1, "No video has been opened");
   luaL_argcheck(L, t->nDimension == 3, 2, "Dst must be a 3D tensor");
+  luaL_argcheck(L, THTensor_(isContiguous)(t), 2, "Dst must be contiguous");
   luaL_argcheck(L, t->size[0] == 3, 2, "Dst 1st dim must be 3");
   luaL_argcheck(L, (t->size[1] == avs->h) && (t->size[2] == avs->w),
 		2, "Dst tensor has wrong size");
@@ -15,12 +16,16 @@ int thffmpeg_(Main_avreadframe)(lua_State* L) {
     lua_pushboolean(L, 0);
   } else {
     int x, y;
+    real* dstData = THTensor_(data)(t);
     for (y = 0; y < avs->h; ++y) {
       for (x = 0; x < avs->w; ++x) {
 	uint8_t* p = frame->data[0] + y * frame->linesize[0] + x * 3;
-	THTensor_(set3d)(t, 0, y, x, (real)p[0]);
-	THTensor_(set3d)(t, 1, y, x, (real)p[1]);
-	THTensor_(set3d)(t, 2, y, x, (real)p[2]);
+	dstData[              y  * avs->w + x] = p[0];
+	dstData[(    avs->h + y) * avs->w + x] = p[1];
+	dstData[(2 * avs->h + y) * avs->w + x] = p[2];
+	//THTensor_(set3d)(t, 0, y, x, (real)p[0]);
+	//THTensor_(set3d)(t, 1, y, x, (real)p[1]);
+	//THTensor_(set3d)(t, 2, y, x, (real)p[2]);
       }
     }
     lua_pushboolean(L, 1);
